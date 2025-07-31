@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Image Gallery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --hover-color: #2980b9;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        
+        .gallery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        
+        .gallery-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .main-view {
+            width: 100%;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .main-view img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: var(--transition);
+        }
+        
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 10;
+            box-shadow: var(--shadow);
+            opacity: 0.7;
+        }
+        
+        .nav-btn:hover {
+            opacity: 1;
+            background-color: white;
+            color: var(--hover-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        #goprev {
+            left: 20px;
+        }
+        
+        #gonext {
+            right: 20px;
+        }
+        
+        .thumbnails {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        
+        .thumbnails::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .thumbnails::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        
+        .thumbnail {
+            width: 100px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+        
+        .thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+        
+        .thumbnail.active {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+        
+        .image-counter {
+            text-align: center;
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-view {
+                height: 350px;
+            }
+            
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .thumbnail {
+                width: 80px;
+                height: 50px;
+            }
+        }
+        
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-container">
+        <h2 class="gallery-title">Photo Gallery</h2>
+        
+        <div class="main-view">
+            <img src="" id="main" alt="Gallery Image" class="fade-in">
+            <button type="button" class="nav-btn" id="goprev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" class="nav-btn" id="gonext">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="image-counter">
+            <span id="current-index">1</span> of <span id="total-count">0</span>
+        </div>
+        
+        <div class="thumbnails" id="sideView"></div>
+    </div>
+
+    <script>
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                initializeGallery(data);
+            })
+            .catch(error => {
+                console.error('Error loading the images:', error);
+                // Fallback to sample data if there's an error
+                initializeGallery(imageData);
+        });
+
+        function initializeGallery(data) {
+            const images = data.images;
+            const count = images.length;
+            let currentIndex = 0;
+            
+            // Update counter display
+            document.getElementById('total-count').textContent = count;
+            updateCounter(currentIndex + 1);
+            
+            // Initialize the gallery
+            function initGallery() {
+                // Set main image
+                document.getElementById('main').src = images[0].src;
+                
+                // Create thumbnail images
+                const sideView = document.getElementById('sideView');
+                sideView.innerHTML = '';
+                
+                images.forEach((image, index) => {
+                    const thumb = document.createElement('img');
+                    thumb.src = image.src;
+                    thumb.classList.add('thumbnail');
+                    thumb.dataset.index = index;
+                    
+                    if (index === 0) {
+                        thumb.classList.add('active');
+                    }
+                    
+                    thumb.addEventListener('click', () => {
+                        changeImage(index);
+                    });
+                    
+                    sideView.appendChild(thumb);
+                });
+
+                // Set up event listeners
+                setupEventListeners();
+            }
+
+            // Change image function
+            function changeImage(index) {
+                const mainImg = document.getElementById('main');
+                
+                // Add fade out effect
+                mainImg.classList.remove('fade-in');
+                setTimeout(() => {
+                    mainImg.src = images[index].src;
+                    mainImg.classList.add('fade-in');
+                }, 200);
+                
+                currentIndex = index;
+                updateCounter(index + 1);
+                
+                // Update active thumbnail
+                document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                    if (i === index) {
+                        thumb.classList.add('active');
+                    } else {
+                        thumb.classList.remove('active');
+                    }
+                });
+            }
+
+            function updateCounter(current) {
+                document.getElementById('current-index').textContent = current;
+            }
+
+            // Set up all event listeners
+            function setupEventListeners() {
+                // Previous button
+                document.getElementById('goprev').addEventListener('click', () => {
+                    currentIndex = (currentIndex - 1 + count) % count;
+                    changeImage(currentIndex);
+                });
+
+                // Next button
+                document.getElementById('gonext').addEventListener('click', () => {
+                    currentIndex = (currentIndex + 1) % count;
+                    changeImage(currentIndex);
+                });
+
+                // Keyboard navigation
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        currentIndex = (currentIndex - 1 + count) % count;
+                        changeImage(currentIndex);
+                    } else if (e.key === 'ArrowRight') {
+                        currentIndex = (currentIndex + 1) % count;
+                        changeImage(currentIndex);
+                    }
+                });
+            }
+
+            // Initialize the gallery
+            initGallery();
+        }
+    </script>
+</body>
+</html>
