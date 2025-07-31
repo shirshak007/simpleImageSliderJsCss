@@ -1,6 +1,6 @@
 # Image Gallery
 
-A modern, responsive image gallery with auto-play functionality.
+A modern, responsive, lightweight image gallery.
 
 ![Gallery Screenshot](image-gallery-ss.png) 
 
